@@ -38,20 +38,24 @@ COOLDOWN = 5
 # --- END OF CONFIGURATION ---
 
 
-# 📂 Load triggers from the external stickers.csv file
-TRIGGERS = {}
+# 📂 Load triggers and sort them to prioritize longer, more specific phrases.
+all_triggers = []
 try:
     with open("stickers.csv", mode="r", encoding="utf-8") as file:
         reader = csv.reader(file)
         for row in reader:
             if len(row) == 2:
-                trigger_text, sticker_id = row[0].strip(), row[1].strip()
-                TRIGGERS[trigger_text] = sticker_id
+                all_triggers.append((row[0].strip(), row[1].strip()))
 except FileNotFoundError:
     print("❌ Error: stickers.csv not found! Please create it before running.")
     sys.exit(1)
 
-# 🚀 Precompile regex patterns for fast checking
+# Sort the list by the length of the trigger text, in descending order (longest first).
+all_triggers.sort(key=lambda item: len(item[0]), reverse=True)
+
+# 🚀 Create the final dictionaries from the sorted list.
+# Dictionaries in Python 3.7+ maintain insertion order.
+TRIGGERS = {trigger: sticker_id for trigger, sticker_id in all_triggers}
 TRIGGER_PATTERNS = {
     trigger: re.compile(rf"\b{re.escape(trigger)}\b", re.IGNORECASE)
     for trigger in TRIGGERS

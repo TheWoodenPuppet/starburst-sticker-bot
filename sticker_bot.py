@@ -101,7 +101,7 @@ async def check_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 break
 
 
-# --- ✍️ Conversation Logic for /addsticker command ---
+# --- ✍️ Conversation Logic for /addsticker and /export commands ---
 
 # Define states for the conversation
 GET_STICKER, GET_TRIGGER = range(2)
@@ -131,7 +131,7 @@ async def get_sticker(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
     return GET_TRIGGER
 
 async def get_trigger(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Saves the sticker and its trigger, then asks for the next sticker."""
+    """Saves the sticker to the temporary session file."""
     trigger_text = update.message.text.strip().lower()
     sticker_id = context.user_data.get('new_sticker_id')
 
@@ -149,7 +149,7 @@ async def get_trigger(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
         )
         return GET_TRIGGER
 
-    # Append to the CSV file and force the save
+    # Append to the temporary CSV file
     with open("stickers.csv", mode='a', newline='', encoding='utf-8') as file:
         writer = csv.writer(file)
         writer.writerow([trigger_text, sticker_id])
@@ -157,16 +157,31 @@ async def get_trigger(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
         os.fsync(file.fileno())
 
     await update.message.reply_text(
-        f"✅ Success! Trigger '{trigger_text}' has been permanently saved.\n\n"
+        f"✅ Success! Trigger '{trigger_text}' has been saved to this session.\n\n"
         "Send the next sticker, or type /done to finish."
     )
     return GET_STICKER
 
 async def done(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Ends the conversation when the user is done adding stickers."""
-    await update.message.reply_text("Great! All new stickers have been saved permanently.")
+    await update.message.reply_text("Great! All stickers for this session have been saved. Remember to /export your changes to make them permanent.")
     context.user_data.clear()
     return ConversationHandler.END
+
+async def export_stickers(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Allows the admin to download the current temporary stickers.csv file."""
+    if update.message.from_user.id != BOT_ADMIN_ID:
+        await update.message.reply_text("⛔ Sorry, this is an admin-only command.")
+        return
+
+    try:
+        await update.message.reply_document(
+            document=open("stickers.csv", "rb"),
+            filename="stickers.csv",
+            caption="Here is the sticker list from the live session. Copy its contents into your main stickers.csv file and push to GitHub."
+        )
+    except FileNotFoundError:
+        await update.message.reply_text("Could not find stickers.csv to send.")
 
 # --- 🌐 Keep-Alive Web Server & Bot Startup ---
 
@@ -194,6 +209,7 @@ def main():
     )
 
     application.add_handler(conv_handler)
+    application.add_handler(CommandHandler('export', export_stickers))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, check_text))
 
     print("🤖 Bot is running...")

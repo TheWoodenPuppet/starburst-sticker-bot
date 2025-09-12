@@ -1,3 +1,6 @@
-python-telegram-bot[ext]>=20.0
-aiohttp>=3.9
-flask>=3.0
+python-telegram-bot
+Flask
+
+# python-telegram-bot[ext]>=20.0
+# aiohttp>=3.9
+# flask>=3.0

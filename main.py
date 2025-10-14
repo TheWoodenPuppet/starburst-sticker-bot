@@ -1,6 +1,5 @@
 import os
 import re
-# import aiohttp   
 
 import time
 import threading
@@ -16,6 +15,7 @@ from telegram.ext import (
     CommandHandler,
     ConversationHandler,
 )
+from datetime import datetime, timezone, timedelta
 
 # --- ⚙️ START OF CONFIGURATION ---
 
@@ -62,6 +62,20 @@ last_trigger_time = {}
 
 async def check_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Checks messages for triggers and sends a corresponding sticker only if the special link is present."""
+
+    # --- NEW FEATURE: Ignore messages older than 3 minutes ---
+    message = update.effective_message
+    if not message:
+        return
+
+    # Calculate how old the message is
+    message_age = datetime.now(timezone.utc) - message.date
+    
+    # If the message is older than 3 minutes, do nothing
+    if message_age > timedelta(minutes=3):
+        return
+    # end 
+
     chat = update.effective_chat
     if not chat:
         return

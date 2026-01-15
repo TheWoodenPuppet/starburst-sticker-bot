@@ -1,5 +1,3 @@
-# replace the content of stickers.csv from the classic.csv or winter.csv
-
 import os
 import re
 import pytz

@@ -81,7 +81,7 @@ async def check_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Ignore messages older than 3 minutes
     message_age = datetime.now(timezone.utc) - message.date
-    if message_age > timedelta(minutes=3):
+    if message_age > timedelta(seconds=15):
         return
  
     chat = update.effective_chat
